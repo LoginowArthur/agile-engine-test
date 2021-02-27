@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { first, switchMap, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'pga-root',
@@ -14,18 +14,26 @@ export class AppComponent {
   private tokenUrl = 'http://interview.agileengine.com/auth';
   private apiKey = '23567b218376f79d9415';
 
-  public images = [];
+  public pictures = new Observable<any>();
 
   constructor(private http: HttpClient) {
-    this.http
-      .post(this.tokenUrl, { apiKey: this.apiKey })
+    this.getImagesByPage()
       .pipe(
-        switchMap((response: { auth: boolean; token: string }) => {
-          return this.http.get(`${this.agileEngineApiUrl}/images`, {
-            headers: { Authorization: `Bearer ${response.token}` },
-          });
-        })
+        tap(
+          (galleryResponse: { pictures: any[] }) =>
+            (this.pictures = of(galleryResponse.pictures))
+        )
       )
       .subscribe(console.log);
+  }
+
+  getImagesByPage() {
+    return this.http.post(this.tokenUrl, { apiKey: this.apiKey }).pipe(
+      switchMap((response: { auth: boolean; token: string }) => {
+        return this.http.get(`${this.agileEngineApiUrl}/images`, {
+          headers: { Authorization: `Bearer ${response.token}` },
+        });
+      })
+    );
   }
 }
