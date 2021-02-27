@@ -1,0 +1,6 @@
+<img
+  *ngFor="let picture of pictures | async"
+  [src]="picture.cropped_picture"
+  alt="photo image"
+  (click)="onImageClicked(picture.id)"
+/>
