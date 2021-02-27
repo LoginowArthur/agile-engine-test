@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, pipe } from 'rxjs';
+import { Observable, of, Subject, zip } from 'rxjs';
 
-import { first, switchMap, tap } from 'rxjs/operators';
+import { first, switchMap, tap, map } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'pga-gallery',
@@ -14,19 +15,35 @@ export class GalleryComponent implements OnInit {
   private agileEngineApiUrl = 'http://interview.agileengine.com';
   private tokenUrl = 'http://interview.agileengine.com/auth';
   private apiKey = '23567b218376f79d9415';
+
   private bearerToken: string;
+  private bearerTokenSource = new Subject<string>();
+  private bearerToken$ = this.bearerTokenSource.asObservable();
 
   public pictures = new Observable<any>();
 
-  constructor(private http: HttpClient) {}
-
-  ngOnInit(): void {
+  constructor(private http: HttpClient, private route: ActivatedRoute) {
     this.getValidToken(this.tokenUrl, this.apiKey)
       .pipe(
         first(),
-        switchMap((response: { auth: boolean; token: string }) => {
-          this.bearerToken = response.token;
-          return this.getPicturesByPage(response.token);
+        tap((response) => this.bearerTokenSource.next(response.token))
+      )
+      .subscribe();
+  }
+
+  ngOnInit(): void {
+    zip(this.bearerToken$, this.route.paramMap)
+      .pipe(
+        first(),
+        map(([bearerToken, paramMap]) => {
+          this.bearerToken = bearerToken;
+          return { bearerToken: bearerToken, pageNumber: paramMap.get('page') };
+        }),
+        switchMap((response: { bearerToken: string; pageNumber: string }) => {
+          return this.getPicturesByPage(
+            response.bearerToken,
+            response.pageNumber
+          );
         }),
         tap((picturesResponse: { pictures: any[] }) => {
           this.pictures = of(picturesResponse.pictures);
@@ -50,13 +67,13 @@ export class GalleryComponent implements OnInit {
 
   getImageById(imageId: string, bearerToken) {
     return this.http.get(`${this.agileEngineApiUrl}/images/${imageId}`, {
-      headers: { Authorization: `Bearer ${this.bearerToken}` },
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+      },
     });
   }
 
   onImageClicked(imageId: string) {
-    this.getImageById(imageId, this.bearerToken)
-      .pipe(first())
-      .subscribe(console.log);
+    this.getImageById(imageId, this.bearerToken).subscribe(console.log);
   }
 }
