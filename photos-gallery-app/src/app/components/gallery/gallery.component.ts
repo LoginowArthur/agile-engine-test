@@ -74,6 +74,6 @@ export class GalleryComponent implements OnInit {
   }
 
   onImageClicked(imageId: string) {
-    this.getImageById(imageId, this.bearerToken).subscribe(console.log);
+    this.getImageById(imageId, this.bearerToken).pipe(first()).subscribe();
   }
 }
