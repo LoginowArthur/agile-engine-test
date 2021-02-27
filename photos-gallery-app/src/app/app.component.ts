@@ -14,16 +14,18 @@ export class AppComponent {
   private tokenUrl = 'http://interview.agileengine.com/auth';
   private apiKey = '23567b218376f79d9415';
 
+  public images = [];
+
   constructor(private http: HttpClient) {
     this.http
       .post(this.tokenUrl, { apiKey: this.apiKey })
       .pipe(
         switchMap((response: { auth: boolean; token: string }) => {
-          return this.http.get(this.agileEngineApiUrl, {
+          return this.http.get(`${this.agileEngineApiUrl}/images`, {
             headers: { Authorization: `Bearer ${response.token}` },
           });
         })
       )
-      .subscribe();
+      .subscribe(console.log);
   }
 }
