@@ -1,4 +1,4 @@
-# Agile Engine Code Challenge
+# Pictures Gallery
 
 ## Get started:
 * Clone the repo
