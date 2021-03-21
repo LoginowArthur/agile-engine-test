@@ -5,10 +5,9 @@ import { GalleryComponent } from './components/gallery/gallery.component';
 
 const routes: Routes = [
   { path: 'gallery/:page', component: GalleryComponent },
-  { path: 'gallery', component: GalleryComponent },
   { path: 'photo/:id', component: GalleryItemComponent },
-  { path: '', redirectTo: 'gallery', pathMatch: 'full' },
-  { path: '**', redirectTo: 'gallery' },
+  { path: '', redirectTo: 'gallery/1', pathMatch: 'full' },
+  { path: '**', redirectTo: 'gallery/1' },
 ];
 
 @NgModule({
