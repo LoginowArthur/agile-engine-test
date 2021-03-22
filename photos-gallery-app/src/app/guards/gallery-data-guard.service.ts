@@ -17,7 +17,6 @@ export class GalleryDataGuardService implements CanActivate {
   ) {}
 
   canActivate(route: ActivatedRouteSnapshot): Observable<boolean> {
-    console.log('can activate');
     return this.authService.waitForHeaders$;
   }
 }

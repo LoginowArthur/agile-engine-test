@@ -42,9 +42,6 @@ export class GalleryComponent implements OnInit {
 
   ngOnInit(): void {
     this.listenToRouteDataSub = this.listenToRouteData$.subscribe();
-    fromEvent(document, 'click')
-      .pipe(tap((e) => console.log(e.target['localName'])))
-      .subscribe();
   }
 
   ngOnDestroy(): void {
