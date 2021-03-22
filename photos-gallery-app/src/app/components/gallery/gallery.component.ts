@@ -1,10 +1,16 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
-import { Observable, of } from 'rxjs';
-import { switchMap, map, first, tap } from 'rxjs/operators';
-import { AuthService } from 'src/app/services/auth/auth.service';
+import { fromEvent, Observable, of, pipe, Subscription } from 'rxjs';
+import { exhaust, filter, first, switchMap, tap } from 'rxjs/operators';
 import { ImagesApiService } from 'src/app/services/images-api/images-api.service';
+
+interface galleryData {
+  page: number;
+  pageCount: number;
+  hasMore: boolean;
+  pictures: any[];
+}
 
 @Component({
   selector: 'pga-gallery',
@@ -12,37 +18,52 @@ import { ImagesApiService } from 'src/app/services/images-api/images-api.service
   styleUrls: ['./gallery.component.scss'],
 })
 export class GalleryComponent implements OnInit {
+  private listenToRouteData$ = this.route.data.pipe(
+    tap((data: { galleryData: galleryData }) => {
+      this.setGalleryView(data.galleryData);
+    })
+  );
+  private listenToRouteDataSub: Subscription;
+
   public pictures$ = new Observable<any[]>();
+  public page: number;
+  public pageCount: number;
 
   constructor(
-    private route: ActivatedRoute,
-    private authService: AuthService,
+    public route: ActivatedRoute,
+    private router: Router,
     private imagesApiService: ImagesApiService
   ) {
-    this.authService.setHeadersWithValidToken();
+    // Add more validations
+    if (+this.route.snapshot.paramMap.get('pageNumber') < 1) {
+      this.router.navigate(['gallery/1']);
+    }
   }
 
   ngOnInit(): void {
-    this.authService.waitForHeaders$
-      .pipe(tap(() => this.setPictures()))
+    this.listenToRouteDataSub = this.listenToRouteData$.subscribe();
+    fromEvent(document, 'click')
+      .pipe(tap((e) => console.log(e.target['localName'])))
       .subscribe();
   }
 
-  onImageClicked(imageId: string) {
-    this.imagesApiService.getImageById(imageId).pipe(first()).subscribe();
+  ngOnDestroy(): void {
+    if (this.listenToRouteDataSub) {
+      this.listenToRouteDataSub.unsubscribe();
+    }
   }
 
-  setPictures() {
-    this.route.paramMap
-      .pipe(
-        map((paramMap) => paramMap.get('page')),
-        switchMap((pageNumber) =>
-          this.imagesApiService.getPicturesByPage(pageNumber)
-        ),
-        tap((response: { pictures: any[] }) => {
-          this.pictures$ = of(response.pictures);
-        })
-      )
-      .subscribe();
+  setGalleryView(galleryData: galleryData) {
+    this.pictures$ = of(galleryData.pictures);
+    this.page = +galleryData.page;
+    this.pageCount = +galleryData.pageCount;
+  }
+
+  getPictureDetails(imageId: string, imageIndex: number) {
+    this.imagesApiService.getImageById$(imageId).subscribe();
+  }
+
+  pageNav(galleryPage: number, pageCount: number) {
+    this.router.navigate([`gallery/${galleryPage}`]);
   }
 }

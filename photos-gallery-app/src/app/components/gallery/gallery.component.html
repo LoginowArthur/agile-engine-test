@@ -1,6 +1,14 @@
 <img
-  *ngFor="let picture of pictures$ | async"
+  #picture
+  *ngFor="let picture of pictures$ | async; let i = index"
   [src]="picture.cropped_picture"
   alt="photo image"
-  (click)="onImageClicked(picture.id)"
+  (click)="getPictureDetails(picture.id, i)"
 />
+
+<button (click)="pageNav(page - 1, pageCount)" [disabled]="page === 1">
+  prev
+</button>
+<button (click)="pageNav(page + 1, pageCount)" [disabled]="page === pageCount">
+  next
+</button>
